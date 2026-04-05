@@ -1,2 +1,200 @@
-# jcoder615.github.io
-my quick sort algorithm choosing page, created from only 1 html file! choose between many different sorting algorithms!
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sorting 100 Pillars</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #111;
+    font-family: Arial, sans-serif;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+  }
+  #container {
+    display: flex;
+    align-items: flex-end;
+    width: 100vw;
+    height: 100vh;
+  }
+  .bar {
+    flex: 1;
+    margin: 0 1px;
+    transition: height 0.1s linear, background-color 0.1s linear;
+  }
+  #controls {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 10;
+    background: rgba(0,0,0,0.6);
+    padding: 10px;
+    border-radius: 8px;
+  }
+  select, button {
+    padding: 8px;
+    margin: 5px;
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+
+<div id="controls">
+  <select id="algo">
+    <option value="bubble">Bubble Sort</option>
+    <option value="quick">Quick Sort</option>
+    <option value="gnome">Gnome Sort</option>
+    <option value="shell">Shell Sort</option>
+    <option value="counting">Counting Sort</option>
+    <option value="radix">Radix Sort</option>
+  </select>
+  <button onclick="startSort()">Start</button>
+</div>
+
+<div id="container"></div>
+
+<script>
+const container = document.getElementById('container');
+let values = [];
+let delay = 5;
+
+function generateValues() {
+  values = Array.from({length: 100}, (_, i) => i + 1);
+  for (let i = values.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [values[i], values[j]] = [values[j], values[i]];
+  }
+}
+
+function getColor(value) {
+  const ratio = (value - 1) / 99;
+  const hue = 270 * (1 - ratio);
+  return `hsl(${hue}, 100%, 50%)`;
+}
+
+function render() {
+  container.innerHTML = '';
+  values.forEach(v => {
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    bar.style.height = (v / 100) * 100 + '%';
+    bar.style.backgroundColor = getColor(v);
+    container.appendChild(bar);
+  });
+}
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+async function bubbleSort() {
+  for (let i = 0; i < values.length; i++) {
+    for (let j = 0; j < values.length - i - 1; j++) {
+      if (values[j] > values[j + 1]) {
+        [values[j], values[j + 1]] = [values[j + 1], values[j]];
+        render(); await sleep(delay);
+      }
+    }
+  }
+}
+
+async function quickSort(l=0, r=values.length-1) {
+  if (l >= r) return;
+  let pivot = values[r];
+  let i = l;
+  for (let j = l; j < r; j++) {
+    if (values[j] < pivot) {
+      [values[i], values[j]] = [values[j], values[i]];
+      i++; render(); await sleep(delay);
+    }
+  }
+  [values[i], values[r]] = [values[r], values[i]];
+  render(); await sleep(delay);
+  await quickSort(l, i-1);
+  await quickSort(i+1, r);
+}
+
+async function gnomeSort() {
+  let i = 1;
+  while (i < values.length) {
+    if (i === 0 || values[i] >= values[i-1]) i++;
+    else {
+      [values[i], values[i-1]] = [values[i-1], values[i]];
+      i--; render(); await sleep(delay);
+    }
+  }
+}
+
+async function shellSort() {
+  for (let gap = Math.floor(values.length/2); gap > 0; gap = Math.floor(gap/2)) {
+    for (let i = gap; i < values.length; i++) {
+      let temp = values[i];
+      let j;
+      for (j = i; j >= gap && values[j-gap] > temp; j -= gap) {
+        values[j] = values[j-gap];
+        render(); await sleep(delay);
+      }
+      values[j] = temp;
+      render(); await sleep(delay);
+    }
+  }
+}
+
+async function countingSort() {
+  let count = Array(100).fill(0);
+  values.forEach(v => count[v-1]++);
+  let idx = 0;
+  for (let i = 0; i < count.length; i++) {
+    while (count[i]-- > 0) {
+      values[idx++] = i+1;
+      render(); await sleep(delay);
+    }
+  }
+}
+
+async function radixSort() {
+  let exp = 1;
+  let max = Math.max(...values);
+  while (Math.floor(max/exp) > 0) {
+    let output = new Array(values.length);
+    let count = Array(10).fill(0);
+
+    values.forEach(v => count[Math.floor(v/exp)%10]++);
+    for (let i = 1; i < 10; i++) count[i] += count[i-1];
+
+    for (let i = values.length-1; i >= 0; i--) {
+      let digit = Math.floor(values[i]/exp)%10;
+      output[--count[digit]] = values[i];
+    }
+
+    values = output;
+    render(); await sleep(delay);
+    exp *= 10;
+  }
+}
+
+async function startSort() {
+  generateValues();
+  render();
+  const algo = document.getElementById('algo').value;
+
+  if (algo === 'bubble') await bubbleSort();
+  if (algo === 'quick') await quickSort();
+  if (algo === 'gnome') await gnomeSort();
+  if (algo === 'shell') await shellSort();
+  if (algo === 'counting') await countingSort();
+  if (algo === 'radix') await radixSort();
+}
+
+generateValues();
+render();
+</script>
+
+</body>
+</html>
